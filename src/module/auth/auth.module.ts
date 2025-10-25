@@ -2,16 +2,18 @@ import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { user } from '../user/entity/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
-import { refreshToken } from './entity/refreshToken.entity';
 import { PassportModule } from '@nestjs/passport';
-import { JwtRefreshStretagy } from './strategy/jwt-refresh.strategy';
+import { User } from '../user/entities/user.entity';
+import { refreshToken } from './entities/refreshToken.entity';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
+import { GoogleStrategy } from './strategies/google-auth.strategy';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([user, refreshToken]),
+    TypeOrmModule.forFeature([User, refreshToken]),
       JwtModule.registerAsync({
         global: true,
         useFactory: async (configService: ConfigService) => ({
@@ -23,6 +25,11 @@ import { JwtRefreshStretagy } from './strategy/jwt-refresh.strategy';
       PassportModule
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtRefreshStretagy]
+  providers: [
+    AuthService,
+    JwtAccessStrategy,
+    JwtRefreshStrategy,
+    GoogleStrategy
+  ]
 })
 export class AuthModule {}

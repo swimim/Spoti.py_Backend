@@ -11,5 +11,6 @@ export const typeOrmConfig = (configService: ConfigService): TypeOrmModuleOption
     database: configService.get<string>('DB_DATABASE'),
     entities: [__dirname + '/../**/*.entity.{js,ts}'],
     driver: require('mysql2'),
-    synchronize: true,
+    synchronize: false,
+    dropSchema: false,
 });

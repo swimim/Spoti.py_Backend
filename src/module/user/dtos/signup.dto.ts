@@ -5,7 +5,7 @@ export class SignupDTO {
     @IsString()
     @MinLength(5, { message: '아이디는 5자 이상이어야 합니다.' })
     @MaxLength(16, { message: '아이디는 16자 이하여야 합니다,' })
-    user_id: string
+    userId: string
 
     @IsNotEmpty()
     @IsString()

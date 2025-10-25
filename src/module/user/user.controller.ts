@@ -1,6 +1,7 @@
-import {Body, Controller, HttpCode, Post } from '@nestjs/common';
+import {Body, Controller, Post, Query } from '@nestjs/common';
 import { UserService } from './user.service';
-import { SignupDTO } from './dto/signup.dto';
+import { SignupDTO } from './dtos/signup.dto';
+import { AuthMethod } from './enums/auth-method.enum';
 
 @Controller('user')
 export class UserController {
@@ -8,9 +9,12 @@ export class UserController {
         private readonly userService: UserService
     ) {}
 
-    @Post('signup')
-    @HttpCode(201)
-    signup(@Body() dto: SignupDTO) {
-        return this.userService.signup(dto);
+    @Post('/signup')
+    signup(
+        @Query('method') method: AuthMethod,
+        @Body() dto: SignupDTO
+    ) {
+        console.log(method, dto);
+        return this.userService.signup(method, dto);
     }
 }
