@@ -1,5 +1,6 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { AuthMethod } from "../enums/auth-method.enum";
+import { Drowsiness } from "src/module/statistic/entities/drowsiness.entity";
 
 @Entity('user')
 export class User {
@@ -17,4 +18,8 @@ export class User {
 
   @Column({ nullable: false, type: 'enum', enum: AuthMethod })
   method: AuthMethod
+
+  @OneToMany(() => Drowsiness, (drowsiness) => drowsiness.user)
+  drowsinessList: Drowsiness[];
+
 }
