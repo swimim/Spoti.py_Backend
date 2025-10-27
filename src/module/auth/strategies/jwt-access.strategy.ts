@@ -3,6 +3,10 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+interface AccessTokenClaims {
+  sub: number
+}
+
 @Injectable()
 export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt-access') {
   constructor(
@@ -14,7 +18,8 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt-access') 
     });
   }
   
-  validate(payload: any) {
-    return { userIdx: payload.sub };
+  validate(payload: AccessTokenClaims) {
+    const response = { userIdx: payload.sub };
+    return response;
   }
 }

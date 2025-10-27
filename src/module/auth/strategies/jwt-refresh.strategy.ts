@@ -5,6 +5,10 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { AuthService } from "../auth.service";
 import { ConfigService } from "@nestjs/config";
 
+interface RefreshTokenClaims {
+  sub: number
+}
+
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(
@@ -21,7 +25,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     })
   }
 
-  async validate(req: Request, payload: any) {
+  async validate(req: Request, payload: RefreshTokenClaims) {
     const refreshToken = req.cookies?.['refreshToken'];
     if (!refreshToken) throw new UnauthorizedException('토큰이 쿠키에 존재하지 않습니다.');
 
