@@ -1,26 +1,20 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SigninDTO } from './dtos/signin.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
-import { GoogleGuard } from './guards/google-auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
     constructor(
         private readonly authService: AuthService
-    ) {}
+    ) { }
 
     @Post('/signin')
     signin(@Body() dto: SigninDTO) {
         return this.authService.signin(dto);
-    }
-
-    @UseGuards(GoogleGuard)
-    @Post('/google/signin')
-    googleAuth() {
-        return;
     }
 
     @UseGuards(JwtRefreshGuard)
@@ -35,5 +29,20 @@ export class AuthController {
     logout(@GetUser() user) {
         const userIdx = user.userIdx;
         return this.authService.logout(userIdx);
+    }
+
+    @Get('google')
+    @UseGuards(AuthGuard('google'))
+    async googleLogin(): Promise<void> {
+    }
+
+    @Get('google/redirect')
+    @UseGuards(AuthGuard('google'))
+    async googleLoginCallback(@Req() req, @Res() res): Promise<void> {
+        const { accessToken, refreshToken } = req.user;
+
+        res.redirect(
+            `myapp://auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`
+        );
     }
 }

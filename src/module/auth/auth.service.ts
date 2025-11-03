@@ -38,7 +38,7 @@ export class AuthService {
 
         if (!isMatch) throw new BadRequestException("아이디 또는 비밀번호가 일치하지 않습니다.");
 
-        const payload = { sub: user.idx };
+        const payload = { sub: user.email };
 
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 14);

@@ -9,7 +9,7 @@ import { User } from '../user/entities/user.entity';
 import { refreshToken } from './entities/refreshToken.entity';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
-import { GoogleStrategy } from './strategies/google-auth.strategy';
+import { GoogleStrategy } from './strategies/Google-OAuth.strategy';
 
 @Module({
   imports: [

@@ -1,7 +1,7 @@
 import {Body, Controller, Post, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { SignupDTO } from './dtos/signup.dto';
-import { AuthMethod } from './enums/auth-method.enum';
+import { AuthenticationProvidersENUM } from '../auth/enums/auth-provider.enum';
 
 @Controller('user')
 export class UserController {
@@ -11,10 +11,8 @@ export class UserController {
 
     @Post('/signup')
     signup(
-        @Query('method') method: AuthMethod,
         @Body() dto: SignupDTO
     ) {
-        console.log(method, dto);
-        return this.userService.signup(method, dto);
+        return this.userService.signup(AuthenticationProvidersENUM.NATIVE, dto);
     }
 }
