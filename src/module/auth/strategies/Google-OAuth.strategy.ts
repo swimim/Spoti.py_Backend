@@ -23,7 +23,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientID:
         configService.get<string>("GOOGLE_CLIENT_ID"),
       clientSecret: configService.get<string>("GOOGLE_CLIENT_SECRET"),
-      callbackURL: 'http://localhost:3000/auth/google/redirect', // redirect_uri
+      callbackURL: configService.get<string>("GOOGLE_REDIRECT_URL"), // redirect_uri
       passReqToCallback: true,
       scope: ['profile', 'email'], // 가져올 정보들
     });
