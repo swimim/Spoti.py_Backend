@@ -5,11 +5,13 @@ import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
     constructor(
-        private readonly authService: AuthService
+        private readonly authService: AuthService,
+        private readonly configService: ConfigService,
     ) { }
 
     @Post('/signin')
@@ -41,8 +43,10 @@ export class AuthController {
     async googleLoginCallback(@Req() req, @Res() res): Promise<void> {
         const { accessToken, refreshToken } = req.user;
 
-        res.redirect(
-            `myapp://auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`
-        );
+        const userAgent = req.headers['user-agent'] || '';
+        const isMobile = /mobile|android|iphone|ipad/i.test(userAgent);
+
+        if (isMobile) return res.redirect(`myapp://auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+        else return res.redirect(`${this.configService.get<string>("FRONTEND_URL")}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`);
     }
 }
