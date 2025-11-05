@@ -8,6 +8,7 @@ import { AuthenticationProvidersENUM } from '../enums/auth-provider.enum';
 import { JwtService } from '@nestjs/jwt';
 import { refreshToken } from '../entities/refreshToken.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import log from 'spectra-log';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -37,13 +38,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done: any,
   ) {
     try {
-      console.log(profile);
+      log(profile, 200, 'TRACE');
 
       // 로그인을 사도하는 사용자의 이메일이 존재하지 않는다면 자동 회원가입 진행
       let user = await this.userRespository.findOneBy({ email: profile.emails[0].value })
-      console.log(user)
+      log(user, 200, 'TRACE');
       if (!user) {
-        console.log("flag1")
         const newUser = this.userRespository.create({
           firstName: profile.name.familyName ?? null,
           lastName: profile.name.givenName,
@@ -65,14 +65,14 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         expiresIn: '14d'
       });
 
-      console.log(user)
+      log(user, 200, 'TRACE');
 
       await this.refreshTokenRepository.save({ userIdx: user.idx, refreshToken, expiresAt });
 
       done(null, { accessToken, refreshToken });
-    } catch (err) {
-      console.error(err);
-      done(err, false);
+    } catch (error) {
+      log(error, 500, 'ERROR');
+      done(error, false);
     }
   }
 }

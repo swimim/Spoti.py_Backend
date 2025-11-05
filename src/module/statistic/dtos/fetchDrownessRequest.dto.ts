@@ -3,9 +3,6 @@ import { EyeStatusENUM } from "../enums/eye-status.enum"
 
 export class fetchDrownessRequestDTO {
   @IsNotEmpty()
-  timestamp: Date
-  
-  @IsNotEmpty()
   ear_smooth: number
   
   @IsNotEmpty()

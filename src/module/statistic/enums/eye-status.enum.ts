@@ -1,4 +1,5 @@
 export enum EyeStatusENUM {
-  close = "CLOSE",
-  open = "OPEN"
+  CLOSE = "CLOSE",
+  OPEN = "OPEN",
+  YELLING = 'YELLING'
 }

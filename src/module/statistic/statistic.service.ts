@@ -4,17 +4,22 @@ import { Repository } from 'typeorm';
 import { Drowsiness } from './entities/drowsiness.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
+import { DrowsinessStat } from './entities/drowsiness_stat.entity';
+import log from 'spectra-log';
 
 @Injectable()
 export class StatisticService {
-  constructor (
+  constructor(
     @InjectRepository(Drowsiness)
     private readonly drowsinessRepository: Repository<Drowsiness>,
+
+    @InjectRepository(DrowsinessStat)
+    private readonly drowsinessStatRepository: Repository<DrowsinessStat>,
 
     @InjectRepository(User)
     private readonly userRepository: Repository<User>
   ) { };
-  
+
   getStatistic(user: any) {
     console.log(user);
   }
@@ -25,28 +30,49 @@ export class StatisticService {
         idx: user.user_idx
       }
     })
-    
+
     if (!_user) throw new NotFoundException("사용자를 찾지 못했습니다.");
 
-    const drowsiness = dto.map(log => {
-      const drownessLog = new Drowsiness();
-      drownessLog.user = _user;
-      drownessLog.earSmooth = log.ear_smooth;
-      drownessLog.status = log.status;
-      drownessLog.at = log.timestamp;
-      return drownessLog;
-    })
+    let count = 0;
+    let avgEarSmooth = 0;
 
-    await this.drowsinessRepository.save(drowsiness);
+    dto.map(log => log.status.match("CLOSED") || log.status.match("YELLING") ? count++ : avgEarSmooth += log.ear_smooth);
 
-    // const value = dto.map(statistic => {
-    //   return `(${_user}, '${statistic.timestamp}', '${statistic.ear_smooth}', '${statistic.status}')`
-    // }).join(", ");
+    if (count >= 4) {
+      log(`${_user.lastName} Is Sleeping!!!`, 500, 'INFO')
+    }
 
-    // const SQL = `INSERT INTO drowsiness (user_idx, at, ear_smooth, status) VALUES ${value};`;
+    avgEarSmooth = avgEarSmooth / (dto.length - count);
 
-    // this.drowsinessRepository.query(SQL);
-    
+    let prevValue = await this.drowsinessStatRepository.findOne({ where: { user: _user } })
+
+    if (!prevValue) {
+      const stat = this.drowsinessStatRepository.create({
+        user: _user,
+        averageEarSmooth: avgEarSmooth
+      });
+      await this.drowsinessStatRepository.save(stat);
+      const drowsinessRecord = await this.drowsinessRepository.create({
+        earSmooth: avgEarSmooth,
+        yellingStatus: count >= 4 ? true : false,
+        user: _user
+      });
+      await this.drowsinessRepository.save(drowsinessRecord);
+    }
+
+    if (prevValue) {
+      const newEarSmooth = (prevValue.averageEarSmooth + avgEarSmooth) / 2;
+      prevValue.averageEarSmooth = newEarSmooth;
+
+      await this.drowsinessStatRepository.save(prevValue);
+      const drowsinessRecord = await this.drowsinessRepository.create({
+        earSmooth: avgEarSmooth,
+        yellingStatus: count >= 4 ? true : false,
+        user: _user
+      });
+      await this.drowsinessRepository.save(drowsinessRecord);
+    }
+
     return;
   }
 }
