@@ -18,7 +18,7 @@ import { GoogleStrategy } from './strategies/Google-OAuth.strategy';
         global: true,
         useFactory: async (configService: ConfigService) => ({
           secret: configService.get('TOKEN_SECRET'),
-          signOptions: { expiresIn: '5m' },
+          signOptions: { expiresIn: '5h' },
         }),
         inject: [ConfigService]
       }),
