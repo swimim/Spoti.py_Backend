@@ -35,7 +35,6 @@ export class StatisticService {
             drowsinessCount: Math.round(Math.random() * 20),
             option: [],
           }));
-
         case "monthly":
         default:
           const now = new Date();

@@ -22,12 +22,15 @@ export class User {
   @OneToMany(() => Drowsiness, (drowsiness) => drowsiness.user)
   drowsinessList: Drowsiness[];
 
-  @Column({ nullable: true }) 
+  @Column({ nullable: true })
   providerId: string;
 
   @Column({ nullable: true })
   firstName: string;
 
   @Column({ nullable: true })
-  lastName: string
+  lastName: string;
+
+  @Column({ nullable: false, default: 100 })
+  score: number;
 }

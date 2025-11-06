@@ -50,7 +50,7 @@ export class AuthService {
 
         await this.refreshTokenRepository.save({ userIdx: user.idx, refreshToken, expiresAt });
 
-        return { accessToken, refreshToken };
+        return { accessToken, refreshToken, username: user.firstName + user.lastName, score: user.score };
     }
 
     async refreshAccessToken(userIdx: number) {
