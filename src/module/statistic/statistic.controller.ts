@@ -10,10 +10,4 @@ export class StatisticController {
   ) {};
 
   // Todo: getUser 타입 작성, 통계 데이터 반환
-
-  @Get()
-  @UseGuards(JwtAccessGuard)
-  getStatistic(@GetUser() user: any) {
-    return this.statisticService.getStatistic(user);
-  }
 }

@@ -4,6 +4,7 @@ import { InternalGuard } from './guards/internal.guard';
 import { StatisticService } from './statistic.service';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
 import { JwtAccessGuard } from '../auth/guards/jwt-access.guard';
+import log from 'spectra-log';
 
 @Controller('internal/statistic')
 export class StatisticInternalController {
