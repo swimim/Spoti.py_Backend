@@ -40,34 +40,70 @@ export class StatisticService {
 
       switch (method) {
         case "weekly": {
-          const weekAgo = new Date(now);
-          weekAgo.setDate(now.getDate() - 7);
+          const now = new Date();
+
+          const today = new Date(now);
+          today.setHours(0, 0, 0, 0);
+
+          const dayOfWeek = today.getDay();
+
+          const startDate = new Date(today);
+          startDate.setDate(today.getDate() - (dayOfWeek));
+
+          const endDate = new Date(today);
+          endDate.setDate(today.getDate() + (dayOfWeek));
 
           const records = await this.drowsinessRepository.find({
             where: {
               user: { idx: _user.idx },
-              at: Between(weekAgo, now),
+              at: Between(startDate, endDate),
             },
             order: { at: 'ASC' },
           });
 
-          const weeklyData = new Map<string, number>();
+          const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 
-          for (let i = 0; i <= 6; i++) {
-            weeklyData.set(i.toString(), 0);
+          const weekly: {
+            date: string;
+            dayOfWeek: string;
+            drowsinessCount: number;
+            option: string[];
+          }[] = [];
+
+          for (let i = 0; i < 7; i++) {
+            const cur = new Date(startDate);
+            cur.setDate(startDate.getDate() + i);
+
+            const month = String(cur.getMonth() + 1).padStart(2, '0');
+            const day = String(cur.getDate()).padStart(2, '0');
+            const formatted = `${month}-${day}`;
+            const dow = dayNames[cur.getDay()];
+
+            weekly.push({
+              date: formatted,
+              dayOfWeek: dow,
+              drowsinessCount: 0,
+              option: [],
+            });
           }
 
-          // 기존 데이터 카운트
-          records.forEach((record) => {
-            const dayIndex = record.at.getDay().toString();
-            weeklyData.set(dayIndex, (weeklyData.get(dayIndex) || 0) + 1);
+          records.forEach((r) => {
+            const month = String(r.at.getMonth() + 1).padStart(2, '0');
+            const day = String(r.at.getDate()).padStart(2, '0');
+            const key = `${month}-${day}`;
+
+            const item = weekly.find((w) => w.date === key);
+            if (item) item.drowsinessCount++;
           });
 
-          return Array.from(weeklyData.entries()).map(([day, count]) => ({
-            day,
-            drowsinessCount: count,
-            option: [],
-          }));
+          const max = Math.max(...weekly.map((w) => w.drowsinessCount));
+          if (max > 0) {
+            weekly.forEach((w) => {
+              if (w.drowsinessCount === max) w.option.push('highest');
+            });
+          }
+
+          return weekly.sort((b, a) => b.date.localeCompare(a.date));;
         }
 
         case "monthly":
