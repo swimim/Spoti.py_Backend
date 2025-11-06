@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { refreshToken } from './entities/refreshToken.entity';
 import { SigninDTO } from './dtos/signin.dto';
+import log from 'spectra-log';
 
 @Injectable()
 export class AuthService {
@@ -15,7 +16,7 @@ export class AuthService {
         @InjectRepository(refreshToken)
         private readonly refreshTokenRepository: Repository<refreshToken>,
         private readonly jwtService: JwtService
-    ) {}
+    ) { }
 
     async validateRefreshToken(refreshToken: string) {
         const existingRefreshToken = await this.refreshTokenRepository.findOne({
@@ -25,7 +26,7 @@ export class AuthService {
         if (!existingRefreshToken) throw new UnauthorizedException('토큰을 찾을 수 없습니다.');
 
         if (Date.now() > existingRefreshToken.expiresAt.getTime()) {
-        throw new UnauthorizedException('토큰이 만료되었습니다.');
+            throw new UnauthorizedException('토큰이 만료되었습니다.');
         }
     }
 
@@ -49,14 +50,14 @@ export class AuthService {
         });
 
         await this.refreshTokenRepository.save({ userIdx: user.idx, refreshToken, expiresAt });
-
+        
         return { accessToken, refreshToken, username: user.firstName + user.lastName, score: user.score };
     }
 
     async refreshAccessToken(userIdx: number) {
         const accessToken = await this.jwtService.signAsync({ sub: userIdx });
 
-        return { accessToken};
+        return { accessToken };
     }
 
     async logout(userIdx: number) {

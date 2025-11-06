@@ -23,4 +23,10 @@ export class SignupDTO {
     @IsEmail()
     @IsNotEmpty()
     email: string;
+
+    @IsNotEmpty()
+    userFirst: string;
+
+    @IsNotEmpty()
+    userLast: string;
 }
