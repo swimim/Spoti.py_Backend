@@ -122,8 +122,7 @@ export class StatisticService {
             }
           });
 
-          // 날짜 내림차순 정렬
-          return top.sort((a, b) => b.date.localeCompare(a.date));
+          return top.sort((b, a) => b.date.localeCompare(a.date));
         }
       }
     };
