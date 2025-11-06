@@ -26,6 +26,57 @@ export class StatisticService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) { }
 
+  async getStatistic(user: any, method: string = "weekly") {
+    const generateData = () => {
+      switch (method) {
+        case "weekly":
+          return Array.from({ length: 7 }, (_, i) => ({
+            day: i.toString(),
+            drowsinessCount: Math.round(Math.random() * 20),
+            option: [],
+          }));
+
+        case "monthly":
+        default:
+          const now = new Date();
+          const result: any[] = [];
+
+          for (let i = 29; i >= 0; i--) {
+            const date = new Date(now);
+            date.setDate(now.getDate() - i);
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const formattedDate = `${month}-${day}`;
+
+            result.push({
+              date: formattedDate,
+              drowsinessCount: Math.round(Math.random() * 20),
+              option: [],
+            });
+          }
+
+          const top = result
+            .sort((a, b) => b.drowsinessCount - a.drowsinessCount)
+            .slice(0, 9);
+
+          const maxDrowsiness = Math.max(...top.map(item => item.drowsinessCount));
+
+          top.forEach(item => {
+            if (item.drowsinessCount === maxDrowsiness) {
+              item.option = ["highest"];
+            }
+          });
+
+          return top.sort((b, a) => a.date.localeCompare(b.date));
+      }
+    };
+
+    return {
+      success: true,
+      data: generateData(),
+    };
+  }
+
   async setStatistic(dto: fetchDrownessRequestDTO[], user: any) {
     const _user = await this.userRepository.findOne({
       where: { idx: user.user_idx },
@@ -69,7 +120,7 @@ export class StatisticService {
       });
       await this.drowsinessStatRepository.save(stat);
     } else {
-      prevValue.averageEarSmooth = avgEarSmooth; 
+      prevValue.averageEarSmooth = avgEarSmooth;
       await this.drowsinessStatRepository.save(prevValue);
     }
 
