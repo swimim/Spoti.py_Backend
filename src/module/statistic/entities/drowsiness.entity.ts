@@ -18,5 +18,5 @@ export class Drowsiness {
   earSmooth: number
 
   @Column({ nullable: false, default: false })
-  yellingStatus: boolean
+  tiredStatus: boolean
 }

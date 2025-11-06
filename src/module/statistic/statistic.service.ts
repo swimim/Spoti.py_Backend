@@ -13,6 +13,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject } from '@nestjs/common';
 import { EyeStatusENUM } from './enums/eye-status.enum';
 import log from 'spectra-log';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class StatisticService {
@@ -24,6 +25,7 @@ export class StatisticService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly configService: ConfigService,
   ) { }
 
   async getStatistic(user: any, method: string = "weekly") {
@@ -83,31 +85,27 @@ export class StatisticService {
 
     if (!_user) throw new NotFoundException('사용자를 찾지 못했습니다.');
 
-    const emailPrefix = `email:${_user.email}:`;
+    const emailPrefix = `drowsiness:${_user.email}`;
+    const DETECTION_WINDOW = this.configService.get<number>("DETECTION_WINDOW") ?? 300; // 5분
+    const ALERT_THRESHOLD = this.configService.get<number>("ALERT_THRESHOLD") ?? 4; // 4회
+    const CACHE_TTL = DETECTION_WINDOW * 1000;
+
     let closedCount = 0;
     let yawningCount = 0;
     let avgEarSmooth = 0;
 
     // 상태 분류 및 평균 계산
-    dto.forEach((log) => {
-      if (log.status === EyeStatusENUM.CLOSE) {
-        closedCount++;
-      } else if (log.status === EyeStatusENUM.YAWNING) {
-        yawningCount++;
-      } else {
-        avgEarSmooth += log.ear_smooth;
-      }
+    dto.forEach((varLog) => {
+      if (varLog.status == EyeStatusENUM.CLOSED) closedCount++;
+      else if (varLog.status == EyeStatusENUM.YAWNING) yawningCount++;
+      else avgEarSmooth += varLog.ear_smooth;
     });
 
     const normalCount = dto.length - closedCount - yawningCount;
     avgEarSmooth = normalCount > 0 ? avgEarSmooth / normalCount : 0;
-    const totalAbnormalCount = closedCount + yawningCount;
+    const currentAbnormalCount = closedCount + yawningCount;
 
-    if (totalAbnormalCount >= 4) {
-      log(`${_user.lastName} Is Sleeping!!!`, 500, 'INFO');
-    }
-
-    // 통계 업데이트 (누적 평균 계산)
+    // DB 통계 업데이트
     let prevValue = await this.drowsinessStatRepository.findOne({
       where: { user: _user },
     });
@@ -125,39 +123,45 @@ export class StatisticService {
 
     const drowsinessRecord = this.drowsinessRepository.create({
       earSmooth: avgEarSmooth,
-      yellingStatus: totalAbnormalCount >= 4,
+      tiredStatus: false,
       user: _user,
     });
     await this.drowsinessRepository.save(drowsinessRecord);
 
-    // 캐시 처리
-    const cacheData = {
-      earSmooth: avgEarSmooth,
-      yellingStatus: totalAbnormalCount >= 4,
-      timestamp: new Date().toISOString(),
-      statusCount: { closed: closedCount, yawning: yawningCount, normal: normalCount },
-    };
+    if (currentAbnormalCount > 0) {
+      const cachedHistory: any[] = (await this.cacheManager.get(emailPrefix)) || [];
+      const now = Date.now();
 
-    const hasClosed = closedCount > 0;
-    const hasYawning = yawningCount > 0;
+      const recentHistory = cachedHistory.filter(
+        (record) => now - record.timestamp < CACHE_TTL
+      );
 
-    if (hasClosed || hasYawning) {
-      const ttl = hasClosed ? 1800 : 3600;
-      const keys = await (this.cacheManager.stores as any).keys(`${emailPrefix}*`);
+      recentHistory.push({
+        timestamp: now,
+        closed: closedCount,
+        yawning: yawningCount,
+        earSmooth: avgEarSmooth,
+      });
 
-      // 기존 캐시 TTL 갱신
-      for (const key of keys) {
-        const value = await this.cacheManager.get(key);
-        if (value) {
-          await this.cacheManager.set(key, value, ttl);
-        }
+      const totalDetections = recentHistory.reduce(
+        (sum, record) => sum + record.closed + record.yawning,
+        0
+      );
+
+      // 알림 전송 로직으로 대체
+      if (totalDetections >= ALERT_THRESHOLD) {
+        log(`${_user.email} - 5분간 졸음 징후 ${totalDetections}회 감지\n== DETAILS ==================\n${recentHistory.map((r, index) => `[${index}] Eye Closed: ${r.closed}, Yelling: ${r.yawning}, Detected: ${(Date.now() - r.timestamp) / 1000} seconds ago`).join('\n')}`);
+
+        drowsinessRecord.tiredStatus = true;
+        await this.drowsinessRepository.save(drowsinessRecord);
       }
 
-      // 새 캐시 추가
-      const nextIdx = keys.length + 1;
-      await this.cacheManager.set(`${emailPrefix}${nextIdx}`, cacheData, ttl);
+      await this.cacheManager.set(emailPrefix, recentHistory, CACHE_TTL);
     }
 
-    return { message: '통계 및 캐시 업데이트 완료' };
+    return {
+      message: '통계 및 캐시 업데이트 완료',
+      totalDetections: currentAbnormalCount,
+    };
   }
-}
+} 
