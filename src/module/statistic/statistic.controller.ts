@@ -10,6 +10,12 @@ export class StatisticController {
     private readonly statisticService: StatisticService,
   ) { };
 
+  @Get('notification')
+  @UseGuards(JwtAccessGuard)
+  async getWarningNotification(@GetUser() user: any) {
+    return this.statisticService.getWarningNotification(user);
+  }
+
   @Get(':method')
   @UseGuards(JwtAccessGuard)
   async getDrowsnessWarnings(@GetUser() user: any, @Param("method") method: string) {

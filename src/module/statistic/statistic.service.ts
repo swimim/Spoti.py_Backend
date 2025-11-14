@@ -33,7 +33,7 @@ export class StatisticService {
       where: { idx: user.user_idx },
     });
 
-    if (!_user) throw new NotFoundException('사용자를 찾지 못했습니다.');
+    if (!_user) throw new NotFoundException('사용자를 찾지 못 했습니다.');
 
     const generateData = async () => {
       const now = new Date();
@@ -174,7 +174,7 @@ export class StatisticService {
       where: { idx: user.user_idx },
     });
 
-    if (!_user) throw new NotFoundException('사용자를 찾지 못했습니다.');
+    if (!_user) throw new NotFoundException('사용자를 찾지 못 했습니다.');
 
     const emailPrefix = `drowsiness:${_user.email}`;
     const DETECTION_WINDOW = this.configService.get<number>("DETECTION_WINDOW") ?? 300; // 5분
@@ -251,6 +251,42 @@ export class StatisticService {
     return {
       message: '통계 및 캐시 업데이트 완료',
       totalDetections: currentAbnormalCount,
+    };
+  }
+
+  async getWarningNotification(user: any) {
+    const _user = await this.userRepository.findOne({
+      where: { idx: user.user_idx },
+    });
+
+    if (!_user) throw new NotFoundException('사용자를 찾지 못 했습니다.');
+
+    const emailPrefix = `drowsiness:${_user.email}`;
+    const DETECTION_WINDOW = this.configService.get<number>("DETECTION_WINDOW") ?? 300; // 5분
+    const ALERT_THRESHOLD = this.configService.get<number>("ALERT_THRESHOLD") ?? 4; // 4회
+    const CACHE_TTL = DETECTION_WINDOW * 1000;
+
+    // 캐시 가져오기
+    const cachedHistory: any[] = (await this.cacheManager.get(emailPrefix)) || [];
+    const now = Date.now();
+    
+    const recentHistory = cachedHistory.filter(
+      (record) => now - record.timestamp < CACHE_TTL
+    );
+
+    // 졸림 + 하품 카운트
+    const totalDetections = recentHistory.reduce(
+      (sum, record) => sum + record.closed + record.yawning,
+      0
+    );
+
+    const isDangerous: boolean = totalDetections >= ALERT_THRESHOLD ? true : false;
+
+    return {
+      success: true,
+      data: {
+        isDangerous
+      }
     };
   }
 }
