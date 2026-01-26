@@ -9,6 +9,10 @@ export class BaseAPIDocument {
     	.setDescription('Swagger study API description')
     	.setVersion('1.0.0')
     	.addTag('swagger')
+			.addBasicAuth(
+				{ type: 'http', bearerFormat: 'jwt' },
+				'jwt'
+			)
     	.build();
   }
 }

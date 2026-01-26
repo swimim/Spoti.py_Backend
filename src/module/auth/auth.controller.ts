@@ -6,6 +6,7 @@ import { GetUser } from 'src/common/decorators/getUser.decorator';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -28,6 +29,7 @@ export class AuthController {
 
     @UseGuards(JwtAccessGuard)
     @Post('/logout')
+    @ApiBearerAuth('jwt')
     logout(@GetUser() user) {
         const userIdx = user.userIdx;
         return this.authService.logout(userIdx);
