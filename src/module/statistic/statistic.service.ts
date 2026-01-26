@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { fetchDrownessRequestDTO } from './dtos/fetchDrownessRequest.dto';
 import { Repository, Between } from 'typeorm';
 import { Drowsiness } from './entities/drowsiness.entity';
@@ -14,6 +11,7 @@ import { Inject } from '@nestjs/common';
 import { EyeStatusENUM } from './enums/eye-status.enum';
 import log from 'spectra-log';
 import { ConfigService } from '@nestjs/config';
+import { interval, map, mergeMap } from 'rxjs';
 
 @Injectable()
 export class StatisticService {
@@ -27,6 +25,51 @@ export class StatisticService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly configService: ConfigService,
   ) { }
+
+  public async getWarningNotification(
+    userIdx: number
+  ) {
+    const user = await this.userRepository.findOne({
+      where: { idx: userIdx },
+      select: ['email']
+    });
+
+    if (!user) {
+      throw new NotFoundException('사용자를 찾지 못 했습니다.');
+    }
+
+    const emailPrefix = `drowsiness:${user.email}`;
+    const DETECTION_WINDOW = this.configService.get<number>("DETECTION_WINDOW") ?? 300; // 5분
+    const ALERT_THRESHOLD = this.configService.get<number>("ALERT_THRESHOLD") ?? 4; // 4회
+    const CACHE_TTL = DETECTION_WINDOW * 1000;
+
+    return interval(1000).pipe(
+      mergeMap(async (_) => {
+        // 캐시 가져오기
+        const cachedHistory: any[] = (await this.cacheManager.get(emailPrefix)) || [];
+        const now = Date.now();
+        
+        const recentHistory = cachedHistory.filter(
+          (record) => now - record.timestamp < CACHE_TTL
+        );
+
+        // 졸림 + 하품 카운트
+        const totalDetections = recentHistory.reduce(
+          (sum, record) => sum + record.closed + record.yawning,
+          0
+        );
+
+        const isDangerous: boolean = totalDetections >= ALERT_THRESHOLD ? true : false;
+
+        return {
+          data: {
+            success: true,
+            isDangerous
+          }
+        };
+      })
+    );
+  }
 
   async getStatistic(user: any, method = "weekly") {
     const _user = await this.userRepository.findOne({
@@ -251,42 +294,6 @@ export class StatisticService {
     return {
       message: '통계 및 캐시 업데이트 완료',
       totalDetections: currentAbnormalCount,
-    };
-  }
-
-  async getWarningNotification(user: any) {
-    const _user = await this.userRepository.findOne({
-      where: { idx: user.user_idx },
-    });
-
-    if (!_user) throw new NotFoundException('사용자를 찾지 못 했습니다.');
-
-    const emailPrefix = `drowsiness:${_user.email}`;
-    const DETECTION_WINDOW = this.configService.get<number>("DETECTION_WINDOW") ?? 300; // 5분
-    const ALERT_THRESHOLD = this.configService.get<number>("ALERT_THRESHOLD") ?? 4; // 4회
-    const CACHE_TTL = DETECTION_WINDOW * 1000;
-
-    // 캐시 가져오기
-    const cachedHistory: any[] = (await this.cacheManager.get(emailPrefix)) || [];
-    const now = Date.now();
-    
-    const recentHistory = cachedHistory.filter(
-      (record) => now - record.timestamp < CACHE_TTL
-    );
-
-    // 졸림 + 하품 카운트
-    const totalDetections = recentHistory.reduce(
-      (sum, record) => sum + record.closed + record.yawning,
-      0
-    );
-
-    const isDangerous: boolean = totalDetections >= ALERT_THRESHOLD ? true : false;
-
-    return {
-      success: true,
-      data: {
-        isDangerous
-      }
     };
   }
 }

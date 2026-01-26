@@ -6,7 +6,6 @@ import { Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { refreshToken } from './entities/refreshToken.entity';
 import { SigninDTO } from './dtos/signin.dto';
-import log from 'spectra-log';
 
 @Injectable()
 export class AuthService {
@@ -39,7 +38,7 @@ export class AuthService {
 
         if (!isMatch) throw new BadRequestException("아이디 또는 비밀번호가 일치하지 않습니다.");
 
-        const payload = { sub: user.email };
+        const payload = { sub: user.idx };
 
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 14);

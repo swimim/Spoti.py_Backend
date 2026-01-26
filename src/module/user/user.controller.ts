@@ -1,9 +1,10 @@
-import {Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { SignupDTO } from './dtos/signup.dto';
 import { AuthenticationProvidersENUM } from '../auth/enums/auth-provider.enum';
 import { JwtAccessGuard } from '../auth/guards/jwt-access.guard';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('user')
 export class UserController {
@@ -13,6 +14,7 @@ export class UserController {
 
     @Get()
     @UseGuards(JwtAccessGuard)
+    @ApiBearerAuth('jwt')
     async getUserInfo(@GetUser() user: any) {
         return this.userService.getUserInfo(user);
     }
