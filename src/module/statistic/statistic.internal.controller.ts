@@ -15,6 +15,6 @@ export class StatisticInternalController {
   @UseGuards(JwtAccessGuard)
   @Post()
   async fetchStatistic(@Body() dto: fetchDrownessRequestDTO[], @GetUser() user: any) {
-    this.statisticService.setStatistic(dto, user);
+    return this.statisticService.setStatistic(dto, user);
   }
 }

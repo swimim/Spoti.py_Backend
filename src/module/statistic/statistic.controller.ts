@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Sse, UseGuards } from '@nestjs/common';
+import { Controller, Get, MessageEvent, Param, Sse, UseGuards } from '@nestjs/common';
 import { StatisticService } from './statistic.service';
 import { GetUser } from 'src/common/decorators/getUser.decorator';
 import { JwtAccessGuard } from '../auth/guards/jwt-access.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { Observable } from 'rxjs';
 
 @Controller('statistic')
 export class StatisticController {
@@ -13,12 +14,12 @@ export class StatisticController {
   @Sse('notification')
   @ApiBearerAuth('jwt')
   @UseGuards(JwtAccessGuard)
-  public async getWarningNotification(
+  public getWarningNotification(
     @GetUser() user: any
-  ) {
+  ): Observable<MessageEvent> {
     const userIdx = user.userIdx;
 
-    return await this.statisticService.getWarningNotification(userIdx);
+    return this.statisticService.getWarningNotification(userIdx);
   }
 
   @Get(':method')
