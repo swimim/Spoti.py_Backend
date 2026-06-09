@@ -156,6 +156,10 @@ export class StatisticService {
 
         case "monthly":
         default: {
+          const cacheKey = `statistic:monthly:${_user.idx}`;
+          const cached = await this.cacheManager.get(cacheKey);
+          if (cached) return cached;
+
           // 최근 30일간 데이터
           const monthAgo = new Date(now);
           monthAgo.setDate(now.getDate() - 30);
@@ -206,7 +210,9 @@ export class StatisticService {
             }
           });
 
-          return top.sort((b, a) => b.date.localeCompare(a.date));
+          const monthly = top.sort((b, a) => b.date.localeCompare(a.date));
+          await this.cacheManager.set(cacheKey, monthly, 60_000); // 1분 TTL
+          return monthly;
         }
       }
     };
