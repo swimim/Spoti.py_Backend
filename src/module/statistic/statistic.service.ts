@@ -53,16 +53,13 @@ export class StatisticService {
   public async getWarningNotification(
     userIdx: number
   ) {
-    const user = await this.userRepository.findOne({
+    const _user = await this.userRepository.findOne({
       where: { idx: userIdx },
-      select: ['email']
     });
 
-    if (!user) {
-      throw new NotFoundException('사용자를 찾지 못 했습니다.');
-    }
+    if (!_user) throw new NotFoundException('사용자를 찾지 못 했습니다.');
 
-    const emailPrefix = `drowsiness:${user.email}`;
+    const emailPrefix = `drowsiness:${_user.email}`;
     const DETECTION_WINDOW = this.configService.get<number>("DETECTION_WINDOW") ?? 300; // 5분
     const ALERT_THRESHOLD = this.configService.get<number>("ALERT_THRESHOLD") ?? 4; // 4회
     const CACHE_TTL = DETECTION_WINDOW * 1000;
@@ -80,7 +77,7 @@ export class StatisticService {
       0
     );
 
-    const isDangerous: boolean = totalDetections >= ALERT_THRESHOLD ? true : false;
+    const isDangerous: boolean = totalDetections >= ALERT_THRESHOLD;
 
     return {
       success: true,
@@ -181,6 +178,10 @@ export class StatisticService {
 
         case "monthly":
         default: {
+          const cacheKey = `statistic:monthly:${_user.idx}`;
+          const cached = await this.cacheManager.get(cacheKey);
+          if (cached) return cached;
+
           // 최근 30일간 데이터
           const monthAgo = new Date(now);
           monthAgo.setDate(now.getDate() - 30);
@@ -231,7 +232,9 @@ export class StatisticService {
             }
           });
 
-          return top.sort((b, a) => b.date.localeCompare(a.date));
+          const monthly = top.sort((b, a) => b.date.localeCompare(a.date));
+          await this.cacheManager.set(cacheKey, monthly, 60_000); // 1분 TTL
+          return monthly;
         }
       }
     };

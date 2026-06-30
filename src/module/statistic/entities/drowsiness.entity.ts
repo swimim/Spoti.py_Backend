@@ -1,8 +1,9 @@
 import { User } from "src/module/user/entities/user.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { EyeStatusENUM } from "../enums/eye-status.enum";
 
 @Entity()
+@Index("idx_drowsiness_user_at", ["user", "at"])
 export class Drowsiness {
   @PrimaryGeneratedColumn()
   idx: number;

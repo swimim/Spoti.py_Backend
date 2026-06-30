@@ -13,12 +13,12 @@ export class StatisticController {
   @Sse('notification')
   @ApiBearerAuth('jwt')
   @UseGuards(JwtAccessGuard)
-  public async getWarningNotification(
+  public getWarningNotification(
     @GetUser() user: any
   ) {
     const userIdx = user.userIdx;
 
-    return await this.statisticService.subscribeNotification(userIdx);
+    return this.statisticService.subscribeNotification(userIdx);
   }
 
   @Get(':method')

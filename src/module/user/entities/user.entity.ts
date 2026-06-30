@@ -1,6 +1,7 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Drowsiness } from "src/module/statistic/entities/drowsiness.entity";
 import { AuthenticationProvidersENUM } from "src/module/auth/enums/auth-provider.enum";
+import { UserPreference } from "./userPreference.entity";
 
 @Entity('user')
 export class User {
@@ -21,6 +22,9 @@ export class User {
 
   @OneToMany(() => Drowsiness, (drowsiness) => drowsiness.user)
   drowsinessList: Drowsiness[];
+
+  @OneToOne(() => UserPreference, (preferences) => preferences.user)
+  preferences: UserPreference;
 
   @Column({ nullable: true })
   providerId: string;
