@@ -18,7 +18,7 @@ export class StatisticController {
   ) {
     const userIdx = user.userIdx;
 
-    return await this.statisticService.getWarningNotification(userIdx);
+    return await this.statisticService.subscribeNotification(userIdx);
   }
 
   @Get(':method')
